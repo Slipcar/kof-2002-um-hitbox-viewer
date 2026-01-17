@@ -10,11 +10,11 @@ Uma ferramenta avançada de overlay (sobreposição) desenvolvida em Python para
 Este projeto permite visualizar hitboxes, hurtboxes, áreas de throw e, principalmente, **Frame Data em tempo real** com cálculo de vantagem (advantage) na tela. É a ferramenta ideal para laboratório (training mode), descoberta de setups e entendimento profundo das mecânicas do jogo.
 
 ## 📸 Preview
-![Preview](active.png)
-![Preview](active2.png)
-![Preview](active3.png)
-![Preview](frame_advantage.png)
-![Preview](narnia.png)
+![Preview](img/active.png)
+![Preview](img/active2.png)
+![Preview](img/active3.png)
+![Preview](img/frame_advantage.png)
+![Preview](img/narnia.png)
 
 ## ✨ Funcionalidades
 
