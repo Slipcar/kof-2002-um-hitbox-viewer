@@ -1,0 +1,16 @@
+Lista de Hotkeys
+
+F1:  Prox. Range     - Alterna visualização do alcance de ativação de botões (Close A, B, C, D) do player 1. 
+F2:  Atk. Boxes      - Liga/Desliga visualização de Normal e Command Throws do player 1. 
+F3:  Throwable Box   - Liga/Desliga a caixa branca que mostra onde o P1 pode ser agarrado. 
+F4:  Prox. Range     - Alterna visualização do alcance de ativação de botões (Close A, B, C, D) do player 2. 
+F5:  Atk. Boxes      - Liga/Desliga visualização de Normal e Command Throws do player 2. 
+F6:  Throwable Box   - Liga/Desliga a caixa branca que mostra onde o P2 pode ser agarrado. 
+F7:  Pause / Resume  - Congela ou descongela a engine do jogo. 
+F8:  Frame Step      - Avança exatamente 1 frame (apenas quando pausado). 
+F9:  Frame Data Bar  - Liga/Desliga a barra de contagem de frames. 
+F10: Master Toggle   - Liga/Desliga o desenho de todas as hitboxes na tela. 
+
+Numpad 1 (teclado númerico): Narnia P1 - Torna o Player 1 invisível/visível (útil para visualizar golpes de perto). 
+Numpad 2 (teclado númerico): Narnia P2 - Torna o Player 2 invisível/visível (útil para visualizar golpes de perto). 
+Ctrl + Esc                 : Sair      - Encerra a ferramenta imediatamente. 
