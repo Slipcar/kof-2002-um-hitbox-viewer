@@ -493,7 +493,7 @@ def draw_text(surface, x, y, text, color):
 
 def draw_proximity_wall(screen, color, piv_x, piv_y, range_val, facing, win_info):
     line_col = color[:3]
-    screen_range = range_val * win_info['sx']
+    screen_range = range_val * win_info['scale']
     wall_x = piv_x - screen_range if facing == 0 else piv_x + screen_range 
     ix, iy, iwx = int(piv_x), int(piv_y), int(wall_x)
     pygame.draw.line(screen, line_col, (ix, iy), (iwx, iy), 2)
