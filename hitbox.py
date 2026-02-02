@@ -330,7 +330,19 @@ def get_game_window_info():
         rect = win32gui.GetClientRect(hwnd)
         point = win32gui.ClientToScreen(hwnd, (0,0))
         if rect[2] <= 0 or rect[3] <= 0: return None
-        return {"hwnd": hwnd, "x": point[0], "y": point[1], "w": rect[2], "h": rect[3], "sx": rect[2]/VISUAL['WIDTH'], "sy": rect[3]/VISUAL['HEIGHT']}
+
+        win_w, win_h = rect[2], rect[3]
+        native_w, native_h = VISUAL['WIDTH'], VISUAL['HEIGHT']
+
+        scale = win_h / native_h
+        actual_game_width = native_w * scale
+        offset_x = (win_w - actual_game_width) /2
+
+        return {
+            "hwnd": hwnd, "x": point[0], "y": point[1], 
+            "w": rect[2], "h": rect[3], 
+            "scale": scale, "off_x": offset_x
+        }
     except: return None
 
 class GameMemory:
@@ -460,12 +472,15 @@ def draw_pivot(surface, x, y, size=6, color=(255, 255, 255)):
     pygame.draw.line(surface, color, (ix, iy - size), (ix, iy + size), 2)
 
 def draw_box_from_data(screen, win_info, piv_sx, piv_sy, facing, b_x, b_y, b_w, b_h, color, filled=True):
-    vis_w = b_w * VISUAL['BOX_SCALE']
-    vis_h = b_h * VISUAL['BOX_SCALE']
+    vis_w = b_w * VISUAL['BOX_SCALE'] * win_info['scale']
+    vis_h = b_h * VISUAL['BOX_SCALE'] * win_info['scale']
+
     final_rx = -b_x if facing != 0 else b_x
-    scr_x = piv_sx + ((final_rx - (vis_w/2)) * win_info['sx'])
-    scr_y = piv_sy + ((b_y - (vis_h/2)) * win_info['sy'])
-    rect_tuple = (scr_x, scr_y, vis_w * win_info['sx'], vis_h * win_info['sy'])
+
+    scr_x = piv_sx + ((final_rx * win_info['scale']) - (vis_w/2))
+    scr_y = piv_sy + ((b_y * win_info['scale']) - (vis_h/2))
+    
+    rect_tuple = (scr_x, scr_y, vis_w, vis_h)
     draw_glass_box(screen, color, rect_tuple, VISUAL['LINE_THICKNESS'], filled)
 
 def draw_text(surface, x, y, text, color):
@@ -511,8 +526,8 @@ def draw_standard_boxes(screen, mem, base_addr, win_info, cam_x, opponent_base=N
     except: return None
     
     if px == 0 and py == 0: return None
-    piv_sx = ((px - cam_x + VISUAL['FIX_X']) * win_info['sx'])
-    piv_sy = ((VISUAL['FIX_Y'] - py) * win_info['sy'])
+    piv_sx = win_info['off_x'] + ((px - cam_x + VISUAL['FIX_X']) * win_info['scale'])
+    piv_sy = ((VISUAL['FIX_Y'] - py) * win_info['scale'])
     
     if not is_projectile and draw: draw_pivot(screen, piv_sx, piv_sy)
     
