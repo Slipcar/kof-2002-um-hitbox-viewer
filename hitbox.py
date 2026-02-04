@@ -21,7 +21,8 @@ ADDR_BASE_POINTERS = {
     'P1_BASE':  0x1440BA21C,
     'P2_BASE':  0x1440BA43C,
     'PROJ_BASE': 0x1440ABC9C,
-    'PAUSE_FLAG': 0x1440C38EA
+    'PAUSE_FLAG': 0x1440C38EA,
+    'SCREEN_MODE': 0x1407E306C
 }
 
 # --- PROXIMITY KEYS ---
@@ -132,7 +133,8 @@ STATE = {
     'PAUSED': False,
     'FRAME_COUNT': 0,
     'NARNIA_P1': False,
-    'NARNIA_P2': False 
+    'NARNIA_P2': False,
+    'IS_STRETCHED': False
 }
 
 PROX_MODES_P1 = [
@@ -323,25 +325,39 @@ def set_dwm_transparency(hwnd):
     margins = MARGINS(-1, -1, -1, -1)
     ctypes.windll.dwmapi.DwmExtendFrameIntoClientArea(hwnd, ctypes.byref(margins))
 
-def get_game_window_info():
+def get_game_window_info(is_stretched):
     hwnd = win32gui.FindWindow(None, WINDOW_TITLE)
     if not hwnd: return None
     try:
         rect = win32gui.GetClientRect(hwnd)
         point = win32gui.ClientToScreen(hwnd, (0,0))
-        if rect[2] <= 0 or rect[3] <= 0: return None
-
         win_w, win_h = rect[2], rect[3]
         native_w, native_h = VISUAL['WIDTH'], VISUAL['HEIGHT']
+        
+        if win_w <= 0 or win_h <= 0: return None
 
-        scale = win_h / native_h
-        actual_game_width = native_w * scale
-        offset_x = (win_w - actual_game_width) /2
-
+        if is_stretched:
+            # MODO SEM BORDAS
+            sx = win_w / native_w
+            sy = win_h / native_h
+            off_x = 0
+            off_y = 0
+        else:
+            # MODO COM BORDAS
+            scale_x = win_w / native_w
+            scale_y = win_h / native_h
+            final_scale = min(scale_x, scale_y)
+            sx = final_scale
+            sy = final_scale
+            game_draw_w = native_w * final_scale
+            game_draw_h = native_h * final_scale
+            off_x = (win_w - game_draw_w) / 2
+            off_y = (win_h - game_draw_h) / 2
+        
         return {
-            "hwnd": hwnd, "x": point[0], "y": point[1], 
-            "w": rect[2], "h": rect[3], 
-            "scale": scale, "off_x": offset_x
+            "hwnd": hwnd, "x": point[0], "y": point[1], "w": win_w, "h": win_h,
+            "sx": sx, "sy": sy, 
+            "off_x": off_x, "off_y": off_y
         }
     except: return None
 
@@ -472,13 +488,13 @@ def draw_pivot(surface, x, y, size=6, color=(255, 255, 255)):
     pygame.draw.line(surface, color, (ix, iy - size), (ix, iy + size), 2)
 
 def draw_box_from_data(screen, win_info, piv_sx, piv_sy, facing, b_x, b_y, b_w, b_h, color, filled=True):
-    vis_w = b_w * VISUAL['BOX_SCALE'] * win_info['scale']
-    vis_h = b_h * VISUAL['BOX_SCALE'] * win_info['scale']
+    vis_w = b_w * VISUAL['BOX_SCALE'] * win_info['sx']
+    vis_h = b_h * VISUAL['BOX_SCALE'] * win_info['sy']
 
     final_rx = -b_x if facing != 0 else b_x
 
-    scr_x = piv_sx + ((final_rx * win_info['scale']) - (vis_w/2))
-    scr_y = piv_sy + ((b_y * win_info['scale']) - (vis_h/2))
+    scr_x = piv_sx + ((final_rx * win_info['sx']) - (vis_w/2))
+    scr_y = piv_sy + ((b_y * win_info['sy']) - (vis_h/2))
     
     rect_tuple = (scr_x, scr_y, vis_w, vis_h)
     draw_glass_box(screen, color, rect_tuple, VISUAL['LINE_THICKNESS'], filled)
@@ -493,7 +509,7 @@ def draw_text(surface, x, y, text, color):
 
 def draw_proximity_wall(screen, color, piv_x, piv_y, range_val, facing, win_info):
     line_col = color[:3]
-    screen_range = range_val * win_info['scale']
+    screen_range = range_val * win_info['sx']
     wall_x = piv_x - screen_range if facing == 0 else piv_x + screen_range 
     ix, iy, iwx = int(piv_x), int(piv_y), int(wall_x)
     pygame.draw.line(screen, line_col, (ix, iy), (iwx, iy), 2)
@@ -526,8 +542,8 @@ def draw_standard_boxes(screen, mem, base_addr, win_info, cam_x, opponent_base=N
     except: return None
     
     if px == 0 and py == 0: return None
-    piv_sx = win_info['off_x'] + ((px - cam_x + VISUAL['FIX_X']) * win_info['scale'])
-    piv_sy = ((VISUAL['FIX_Y'] - py) * win_info['scale'])
+    piv_sx = win_info['off_x'] + ((px - cam_x + VISUAL['FIX_X']) * win_info['sx'])
+    piv_sy = ((VISUAL['FIX_Y'] - py) * win_info['sy'])
     
     if not is_projectile and draw: draw_pivot(screen, piv_sx, piv_sy)
     
@@ -658,7 +674,7 @@ def process_proximity_cycle(screen, mem, p1_data, p2_data, win_info, is_p2=False
 # MAIN
 # ==============================================================================
 def main():
-    print("--- KOF 2002 UM HITBOXES V1.0 ---")
+    print("--- KOF 2002 UM HITBOXES V1.0.3 ---")
     
     pygame.init()
     try:
@@ -679,7 +695,7 @@ def main():
                 pygame.quit()
                 sys.exit()
 
-        game_info = get_game_window_info()
+        game_info = get_game_window_info(False)
 
         if not game_info:
             screen.fill((20, 20, 20))
@@ -726,6 +742,11 @@ def main():
 
         def check_key(vk): return win32api.GetAsyncKeyState(vk) & 0x8000
         
+        try:
+            val = mem.read_ubyte(ADDR_BASE_POINTERS['SCREEN_MODE'])
+            STATE['IS_STRETCHED'] = (val == 2) # 2 = modo esticado
+        except: pass
+
         # ATIVAÇÃO DO BOTÕES DE PERTO (A, B, C, D) DO PLAYER1
         if check_key(win32con.VK_F1):
             if not keys_state.get('F1'): STATE['P1_CYCLE'] = (STATE['P1_CYCLE']+1)%len(PROX_MODES_P1); keys_state['F1']=True
@@ -795,7 +816,7 @@ def main():
                 keys_state['VK_NUMPAD2'] = True
         else: keys_state['VK_NUMPAD2'] = False
 
-        current_info = get_game_window_info()
+        current_info = get_game_window_info(STATE['IS_STRETCHED'])
         if current_info:
             if current_info['w'] != game_info['w'] or current_info['h'] != game_info['h'] or current_info['x'] != game_info['x']:
                 game_info = current_info
