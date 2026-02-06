@@ -39,7 +39,8 @@ OFF = {
     'POS_Y': 0x22,
     'FACING': 0x38,
     'ANIM_ID': 0x00,
-    'BOX_MASK': 0x7C, 
+    'PROJ_FINISH': 0x72,
+    'BOX_MASK': 0x7C,
     'BOX_DATA': 0x90,
     'THROW_STATUS': 0x7E, 
     'CMD_THROW_BOX': 0x188,
@@ -422,7 +423,16 @@ def get_stun_memory(mem, base_addr): return mem.read_ubyte(base_addr + OFF['THRO
 
 def clear_projectiles_optimized(mem):
     for addr in PROJ_ADDR_LIST:
-        mem.write_int(addr + OFF['BOX_MASK'], 0)
+        try:
+            mask = mem.read_int(addr + OFF['BOX_MASK'])
+
+            if mask != 0 or mask != 128:
+                proj = mem.read_ubyte(addr + OFF['PROJ_FINISH'])
+                if proj == 255:
+                    for i in range(4):
+                        w_addr = addr + OFF['BOX_DATA'] + (i * 5) + 3
+                        mem.write_ubyte(w_addr, 0)
+        except: pass
 
 def get_world_rect(mem, base_addr, box_offset):
     if box_offset == OFF['THROWABLE_BOX']:
