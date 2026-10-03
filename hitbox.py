@@ -223,6 +223,8 @@ class FrameDataTracker:
             final_color = COLORS['INVISIBLE']
 
         self.frames.append(final_color)
+        if len(self.frames) > METER_CONFIG['BAR_LENGTH']:
+            self.frames.pop(0)
 
         if self.was_hit:
             for i in range(len(self.frames)):
